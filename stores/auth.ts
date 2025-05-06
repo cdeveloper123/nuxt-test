@@ -19,8 +19,8 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(email: string, password: string) {
       try {
-        const { private: privateApi } = useApi()
-        const data = await privateApi.login(email, password)
+        const { protected: protectedApi } = useApi()
+        const data = await protectedApi.login(email, password)
         this.token = data.authToken
         await this.fetchUserEmail()
         return true
@@ -34,8 +34,12 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) return
 
       try {
-        const { private: privateApi } = useApi()
-        const data = await privateApi.getCurrentUser()
+        const { protected: protectedApi } = useApi()
+        const data = await protectedApi.getCurrentUser()
+        
+        // If API call wasn't made due to missing token
+        if (!data) return
+
         if (data.email) {
           this.userEmail = data.email
         }

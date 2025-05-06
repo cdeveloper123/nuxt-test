@@ -1,24 +1,30 @@
 # Vue.js Test Task Implementation
 
-This project demonstrates a Vue.js/Nuxt implementation with a focus on SSR (Server-Side Rendering) and client-side interactions. The main goal is to showcase how to properly handle both static (SEO-friendly) and dynamic (user-specific) content.
+This project demonstrates a Vue.js/Nuxt implementation focusing on Server-Side Rendering (SSR) and client-side interactions. The main goal is to showcase the proper handling of both static (SEO-friendly) and dynamic (user-specific) content.
 
-## Project Overview
+## Core Requirements
 
-The application consists of two main features:
-1. User authentication
-2. Profile viewing with SSR support
+1. **SSR for Initial Load**
+   - Profile data rendered server-side for SEO
+   - Public content available immediately
+   - Meta tags generated during SSR
 
-### API Server
-```
-https://modelsocietyapi-stage-a3dcfsb2hgf9fkd0.eastus-01.azurewebsites.net/
-```
+2. **Client-side Navigation**
+   - SPA-style profile navigation
+   - No full page reloads
+   - State preservation between routes
+
+3. **Dynamic User Content**
+   - Authenticated user data loaded client-side
+   - Email display for logged-in users
+   - Bearer token authentication
 
 ## Implementation Approach
 
-### 1. Static vs Dynamic Content Separation
+### 1. SSR and Client-side Content Separation
 
 ```vue
-<!-- Static SSR Content (public profile info) -->
+<!-- Static SSR Content (SEO-friendly) -->
 <main>
   <div v-if="profile" class="profile">
     <h1>{{ profile.userName }}</h1>
@@ -29,7 +35,7 @@ https://modelsocietyapi-stage-a3dcfsb2hgf9fkd0.eastus-01.azurewebsites.net/
   </div>
 </main>
 
-<!-- Dynamic Client-side Content (user email) -->
+<!-- Dynamic Client-side Content -->
 <ClientOnly>
   <div v-if="auth.userEmail" class="user-email">
     Logged in as: {{ auth.userEmail }}
@@ -39,7 +45,7 @@ https://modelsocietyapi-stage-a3dcfsb2hgf9fkd0.eastus-01.azurewebsites.net/
 
 **Reasoning:**
 - Profile data is public and SEO-important → Server-side rendered
-- User email is private and user-specific → Client-side only
+- User email is private and dynamic → Client-side only
 - `<ClientOnly>` prevents hydration mismatches
 
 ### 2. Data Fetching Strategy
@@ -57,39 +63,61 @@ onMounted(async () => {
 ```
 
 **Benefits:**
-- Fast initial page load with SSR
-- SEO-friendly content
-- Non-blocking user data fetching
-- Smooth client-side navigation
+- SEO-critical data available during initial render
+- Dynamic user data doesn't block SSR
+- Efficient client-side updates
+- Clear separation of concerns
 
 ### 3. API Structure
 
 ```typescript
 const api = {
+  // Public endpoints (SSR-compatible)
   public: {
-    // SSR-compatible endpoints (no auth required)
     getProfile: (nameForUrl: string) => 
-      useFetch(`${BASE_URL}/api/members/${nameForUrl}/profile`)
+      useFetch(`${BASE_URL}/api/members/${nameForUrl}/profile`, {
+        key: `profile-${nameForUrl}`,
+        server: true,
+        lazy: false
+      })
   },
-  private: {
-    // Client-side only endpoints (auth required)
-    getCurrentUser: () => authFetch('/api/me')
+
+  // Protected endpoints (client-side only)
+  protected: {
+    getCurrentUser: async () => {
+      const token = getAuthToken()
+      if (!token) return null
+      return authFetch('/api/me')
+    }
   }
 }
 ```
 
 **Design Decisions:**
-- Clear separation between public and private endpoints
-- SSR compatibility for public data
-- Client-side only for authenticated requests
+- Clear separation between public and protected endpoints
+- SSR-compatible public data fetching
+- Token-based authentication for protected routes
+- Efficient caching with unique keys
 
-### 4. Performance Optimizations
+### 4. Client-side Navigation
 
-- Initial SSR fetch for fast first page load
-- Client-side navigation for subsequent views
-- Reactive updates on route changes
-- No full page reloads needed
-- Lazy loading for images
+```typescript
+// Profile page component
+watch(nameForUrl, async (newValue) => {
+  if (newValue) {
+    const { data, error } = await useApi().public.getProfile(newValue)
+    if (!error) {
+      profile.value = data.value
+    }
+  }
+})
+```
+
+**Implementation:**
+- Using `NuxtLink` for client-side routing
+- Watching route params for profile updates
+- Preserving application state
+- No full page reloads
 
 ### 5. SEO Implementation
 
@@ -107,49 +135,59 @@ useHead(() => ({
 }))
 ```
 
-## Key Benefits
-
-1. **SEO Optimization**
-   - Critical content rendered server-side
-   - Meta tags properly generated
-   - Search engine friendly
-
-2. **Performance**
-   - Fast initial page load
-   - Efficient client-side navigation
-   - Optimized data fetching
-   - Parallel loading of content
-
-3. **User Experience**
-   - No content flashing
-   - Smooth navigation
-   - Immediate feedback
-   - Proper loading states
-
-4. **Maintainability**
-   - Clear code organization
-   - Type safety with TypeScript
-   - Easy to extend
-   - Well-structured components
-
-5. **Security**
-   - Private data handled client-side
-   - Proper authentication flow
-   - Secure data handling
-
 ## Project Structure
 
 ```
 ├── composables/
-│   └── useApi.ts         # API interaction logic
+│   └── useApi.ts         # API interaction with SSR support
 ├── pages/
-│   ├── login.vue         # Login page
+│   ├── login.vue         # Authentication page
 │   └── member/
 │       └── [nameForUrl]/
-│           └── profile.vue # Profile page with SSR
+│           └── profile.vue # SSR-enabled profile page
 └── stores/
     └── auth.ts           # Authentication state management
 ```
+
+## Technical Decisions
+
+1. **Nuxt 3**
+   - Built-in SSR support
+   - Automatic route handling
+   - Efficient client-side navigation
+   - Component hydration control
+
+2. **API Design**
+   - Separate public and protected endpoints
+   - SSR-compatible data fetching
+   - Efficient caching strategy
+   - Token-based authentication
+
+3. **State Management**
+   - Centralized auth state
+   - Persistent token storage
+   - Clear public/private data separation
+   - Efficient updates
+
+## Performance Considerations
+
+1. **Server-side Rendering**
+   - Critical content rendered on server
+   - SEO optimization
+   - Fast initial page load
+   - Reduced client-side processing
+
+2. **Client-side Navigation**
+   - No full page reloads
+   - Efficient data updates
+   - State preservation
+   - Smooth transitions
+
+3. **Data Management**
+   - Strategic data fetching
+   - Proper caching
+   - Minimal duplicate requests
+   - Efficient updates
 
 ## Getting Started
 
@@ -177,31 +215,55 @@ yarn build
 }
 ```
 
-## Technical Decisions
+## Key Benefits
 
-1. **Nuxt 3**: Chosen for built-in SSR support and modern Vue.js features
-2. **Pinia**: For state management with TypeScript support
-3. **Composition API**: For better code organization and type safety
-4. **TypeScript**: For enhanced developer experience and code reliability
-
-## Best Practices Implemented
-
-1. **Code Organization**
-   - Clear separation of concerns
-   - Modular component structure
-   - Reusable composables
+1. **SEO Optimization**
+   - Critical content rendered server-side
+   - Meta tags properly generated
+   - Search engine friendly
+   - Semantic markup
 
 2. **Performance**
-   - Efficient SSR implementation
+   - Fast initial page load
+   - Efficient client-side navigation
    - Optimized data fetching
-   - Smart caching strategy
+   - Responsive images
 
-3. **Type Safety**
-   - TypeScript throughout
-   - Proper interface definitions
-   - Type-safe API calls
+3. **User Experience**
+   - Fluid responsive design
+   - Smooth transitions
+   - Loading states
+   - Error feedback
+   - Dark mode support
 
-4. **Error Handling**
-   - Graceful error states
-   - User-friendly error messages
-   - Proper error boundaries
+4. **Maintainability**
+   - Clear code organization
+   - Type safety with TypeScript
+   - Component-based architecture
+   - Responsive utilities
+
+5. **Accessibility**
+   - WCAG compliance
+   - Keyboard navigation
+   - Screen reader support
+   - High contrast modes
+
+## Future Improvements
+
+1. **Performance**
+   - Image optimization
+   - Code splitting
+   - Service workers
+   - Progressive loading
+
+2. **Accessibility**
+   - Enhanced ARIA support
+   - More keyboard shortcuts
+   - Focus management
+   - Voice navigation
+
+3. **Features**
+   - Profile editing
+   - Image upload
+   - Social sharing
+   - Real-time updates

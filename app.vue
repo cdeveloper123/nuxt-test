@@ -1,8 +1,5 @@
 <template>
   <div>
-    <nav>
-      <NuxtLink to="/login">Login</NuxtLink>
-    </nav>
     <!-- This is the main page content container -->
     <NuxtPage />
   </div>
