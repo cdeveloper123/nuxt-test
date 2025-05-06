@@ -143,7 +143,7 @@ useHead(() => ({
 /* Base Styles */
 .page-container {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: white;
 }
 
 /* Navigation Styles */

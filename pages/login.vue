@@ -116,7 +116,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: white;
   padding: clamp(1rem, 5vw, 2rem);
 }
 
@@ -321,36 +321,6 @@ code {
   }
   .demo-credentials {
     margin-top: auto;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .login-container {
-    background: linear-gradient(135deg, #212529 0%, #343a40 100%);
-  }
-  .login-card {
-    background: #343a40;
-  }
-  .login-header {
-    background: #228be6;
-  }
-  .input-wrapper input {
-    background: #495057;
-    border-color: #495057;
-    color: white;
-  }
-  .input-wrapper input::placeholder {
-    color: #adb5bd;
-  }
-  .demo-credentials {
-    background: #212529;
-  }
-  code {
-    background: #495057;
-    color: #e9ecef;
-  }
-  .error-message {
-    background: #862e2e;
   }
 }
 </style> 
