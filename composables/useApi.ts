@@ -26,7 +26,7 @@ export interface UserData {
 export const useApi = () => {
   const getAuthToken = () => {
     const nuxtApp = useNuxtApp()
-    if (nuxtApp.ssrContext?.event.context.isClient) {
+    if (import.meta.client) {
       try {
         const auth = localStorage.getItem('auth')
         return auth ? JSON.parse(auth).token : null

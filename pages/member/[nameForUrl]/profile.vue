@@ -127,7 +127,7 @@ const handleLogout = () => {
 
 // SEO
 useHead(() => ({
-  title: profile.value ? `${profile.value.userName}'s Profile` : 'Profile',
+  title: profile.value ? `${profile.value?.aboutMe}'s Profile` : 'Profile',
   meta: [
     {
       name: 'description',
